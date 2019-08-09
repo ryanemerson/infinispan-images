@@ -1,0 +1,6 @@
+jgroups:
+  transport: tcp
+  dnsPing:
+    address: Example
+    query: Some Query
+    recordType: A
