@@ -73,7 +73,7 @@ configure_encryption
 java -jar ${ISPN_HOME}/bin/config-generator.jar ${CONFIG_PATH} ${IDENTITIES_PATH} ${ISPN_HOME}/server/conf
 
 if [ -n "${DEBUG}" ]; then
-  cat ${CONFIG_FILE}
+  cat ${SERVER_ROOT}/server/conf/*.xml
 fi
 
 exec ${ISPN_HOME}/bin/server.sh ${JAVA_ARGS}
