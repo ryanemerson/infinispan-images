@@ -1,0 +1,13 @@
+<users xmlns:gsp='http://groovy.codehaus.org/2005/gsp'>
+    <gsp:scriptlet>
+        if (sslEnabled) {
+    </gsp:scriptlet>
+    <server-identities>
+        <ssl>
+            <keystore path="path" keystore-password="pass"/>
+        </ssl>
+    </server-identities>
+    <gsp:scriptlet>
+        }
+    </gsp:scriptlet>
+</users>
