@@ -7,9 +7,9 @@
         xmlns:gsp='http://groovy.codehaus.org/2005/gsp'>
 
     <gsp:scriptlet>
-        def udp = "${jgroups.transport}" == "udp"
+        def bindAddress = InetAddress.localHost.hostAddress
         def stack = "${jgroups.dnsPing.query}" ? "image-${jgroups.transport}" : "dns-ping-${jgroups.transport}"
-        def stackPosition = udp ? "PING" : "MPING"
+        def stackPosition = "${jgroups.transport}" == "udp" ? "PING" : "MPING"
     </gsp:scriptlet>
 
     <jgroups>
@@ -21,11 +21,48 @@
 
         <stack name="dns-ping-${jgroups.transport}" extends="image-${jgroups.transport}">
             <dns.DNS_PING dns_address="${jgroups.dnsPing.address}" dns_query="${jgroups.dnsPing.query}"
-                          dns_record_type="${jgroups.dnsPing.recordType}" stack.combine="REPLACE" stack.position="${stackPosition}" />
+                          dns_record_type="${jgroups.dnsPing.recordType}" stack.combine="REPLACE"
+                          stack.position="${stackPosition}"/>
         </stack>
 
         <gsp:scriptlet>
             }
         </gsp:scriptlet>
     </jgroups>
+
+    <cache-container>
+        <transport cluster="${infinispan.clusterName}" stack="${stack}"/>
+    </cache-container>
+
+    <server xmlns="urn:infinispan:server:10.0">
+        <interfaces>
+            <interface name="public">
+                <inet-address value="${bindAddress}"/>
+            </interface>
+        </interfaces>
+
+        <socket-bindings default-interface="public" port-offset="0">
+            <socket-binding name="default" port="11222"/>
+            <socket-binding name="memcached" port="11221"/>
+        </socket-bindings>
+
+        <security>
+            <security-realms>
+                <security-realm name="default">
+                    <properties-realm groups-attribute="Roles">
+                        <user-properties path="users.properties" relative-to="infinispan.server.config.path"
+                                         plain-text="true"/>
+                        <group-properties path="groups.properties" relative-to="infinispan.server.config.path"/>
+                    </properties-realm>
+                    <!-- ##SERVER_IDENTITIES## -->
+                </security-realm>
+            </security-realms>
+        </security>
+
+        <endpoints socket-binding="default" security-realm="default">
+            <hotrod-connector name="hotrod"/>
+            <rest-connector name="rest"/>
+            <memcached-connector socket-binding="memcached" />
+        </endpoints>
+    </server>
 </infinispan>

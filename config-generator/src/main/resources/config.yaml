@@ -1,3 +1,6 @@
+infinispan:
+  clusterName: cluster
+
 jgroups:
   transport: tcp
   dnsPing:
