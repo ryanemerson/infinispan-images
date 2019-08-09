@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: server-ng
+metadata:
+  annotations:
+    description: Red Hat Data Grid is an in-memory, distributed key/value store.
+    iconClass: icon-datagrid
+    openshift.io/display-name: Red Hat Cache Service
+    openshift.io/documentation-url: https://access.redhat.com/documentation/en-us/red_hat_data_grid/7.3/html/red_hat_data_grid_for_openshift/
+    openshift.io/long-description: Red Hat Data Grid Cache Service is an implementation of Data Grid for OpenShift that improves application speed and performance with minimal configuration required.
+    openshift.io/provider-display-name: Red Hat, Inc.
+    openshift.io/support-url: https://www.redhat.com/en/services/support
+    tags: database,datagrid
+  labels:
+    template: server-ng
+  creationTimestamp: null
+  name: server-ng
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Provides a ping service for clustered applications.
+      service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+    labels:
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}-ping
+  spec:
+    clusterIP: None
+    ports:
+    - name: ping
+      port: 7800
+      protocol: TCP
+      targetPort: 7800
+    selector:
+      deploymentConfig: ${APPLICATION_NAME}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Provides a service for accessing the application over HTTPS or Hot Rod protocol.
+      service.alpha.openshift.io/serving-cert-secret-name: service-certs
+    labels:
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
+  spec:
+    ports:
+    - name: single-port
+      port: 11222
+      targetPort: 11222
+    selector:
+      deploymentConfig: ${APPLICATION_NAME}
+- apiVersion: apps/v1beta1
+  kind: StatefulSet
+  metadata:
+    labels:
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
+  spec:
+    replicas: ${{NUMBER_OF_INSTANCES}}
+    serviceName: ${APPLICATION_NAME}-ping
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 20
+        intervalSeconds: 20
+        timeoutSeconds: 1200
+        maxUnavailable: 1
+        maxSurge: 1
+    template:
+      metadata:
+        labels:
+          application: ${APPLICATION_NAME}
+          deploymentConfig: ${APPLICATION_NAME}
+        name: ${APPLICATION_NAME}
+      spec:
+        containers:
+        - env:
+          - name: DEBUG
+            value: "true"
+          - name: JGROUPS_DNS_PING_QUERY
+            value: ${APPLICATION_NAME}-ping.s13.svc.cluster.local
+          - name: JGROUPS_TRANSPORT
+            value: tcp
+          - name: KEYSTORE_CRT_PATH
+            value: /var/run/secrets/openshift.io/serviceaccount
+          image: quay.io/remerson/server
+          name: ${APPLICATION_NAME}
+          ports:
+          - containerPort: 7800
+            name: ping
+            protocol: TCP
+          - containerPort: 11222
+            name: hotrod
+            protocol: TCP
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: "0.5"
+              memory: 512Mi
+          volumeMounts:
+          - mountPath: /var/run/secrets/openshift.io/serviceaccount
+            name: service-certs
+        volumes:
+        - name: service-certs
+          secret:
+            secretName: service-certs
+parameters:
+- description: Specifies a name for the application.
+  displayName: Application Name
+  name: APPLICATION_NAME
+  required: true
+  value: server-ng-service
+- description: Specifies how many instances of the application to create in the cluster.
+  displayName: Number of Instances
+  name: NUMBER_OF_INSTANCES
+  required: true
+  value: "2"
