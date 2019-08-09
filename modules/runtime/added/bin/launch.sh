@@ -17,22 +17,6 @@ env_as_java_arg() {
   fi
 }
 
-configure_jgroups() {
-  local transport="${JGROUPS_TRANSPORT,,}"
-  if [ "tcp" = "$transport" ]; then
-    add_java_arg "jgroups.tcp.address" ${BIND}
-  fi
-
-  if [ -n "${JGROUPS_DNS_PING_QUERY}" ]; then
-    add_java_arg "infinispan.cluster.stack" "dns-ping-${transport}"
-    env_as_java_arg "JGROUPS_DNS_PING_ADDRESS"
-    env_as_java_arg "JGROUPS_DNS_PING_QUERY"
-    env_as_java_arg "JGROUPS_DNS_PING_RECORD_TYPE"
-  else
-    add_java_arg "infinispan.cluster.stack" "image-${transport}"
-  fi
-}
-
 configure_encryption() {
   if [ -n "${KEYSTORE_CRT_PATH}" ]; then
     local keystore_dir="${SERVER_ROOT}/server/conf/keystores"
@@ -77,8 +61,6 @@ if [ -n "${DEBUG}" ]; then
   set -x
 fi
 
-# hostname not available with uib-minimal
-BIND=$(cat /etc/hosts | grep -m 1 $(cat /proc/sys/kernel/hostname) | awk '{print $1;}')
 SERVER_ROOT=/opt/infinispan
 CONFIG_FILE=${SERVER_ROOT}/server/conf/infinispan.xml
 
@@ -88,10 +70,10 @@ if [ ${SERVER_ROOT} != ${ISPN_HOME} ]; then
 fi
 
 configure_encryption
-configure_jgroups
+java -jar ${ISPN_HOME}/bin/config-generator.jar ${CONFIG_PATH} ${IDENTITIES_PATH} ${ISPN_HOME}/server/conf
 
 if [ -n "${DEBUG}" ]; then
   cat ${CONFIG_FILE}
 fi
 
-exec ${ISPN_HOME}/bin/server.sh --bind-address=${BIND} ${JAVA_ARGS}
+exec ${ISPN_HOME}/bin/server.sh ${JAVA_ARGS}

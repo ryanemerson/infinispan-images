@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.infinispan.images</groupId>
-    <artifactId>config-parser</artifactId>
+    <artifactId>config-generator</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -15,8 +15,7 @@
         <maven.compiler.testSource>1.8</maven.compiler.testSource>
         <maven.compiler.testTarget>1.8</maven.compiler.testTarget>
 
-        <imageName>auth_tool</imageName>
-        <mainClass>org.infinispan.images.AuthParser</mainClass>
+        <mainClass>Main</mainClass>
 
         <version.groovy>2.5.7</version.groovy>
         <version.snakeyaml>1.23</version.snakeyaml>
@@ -106,7 +105,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>Main</mainClass>
+                                    <mainClass>${mainClass}</mainClass>
                                 </manifest>
                             </archive>
                             <appendAssemblyId>false</appendAssemblyId>

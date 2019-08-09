@@ -13,7 +13,7 @@
     </gsp:scriptlet>
 
     <jgroups>
-        <stack-file name="image-${jgroups.transport}" path="jgroups/${stack}.xml"/>
+        <stack-file name="image-${jgroups.transport}" path="jgroups/${jgroups.transport}.xml"/>
 
         <gsp:scriptlet>
             if ("${jgroups.dnsPing.query}" != "null") {

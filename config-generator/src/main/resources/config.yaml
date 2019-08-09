@@ -1,9 +1,0 @@
-infinispan:
-  clusterName: cluster
-
-jgroups:
-  transport: tcp
-  dnsPing:
-    address: Example
-    query: Some Query
-    recordType: A
