@@ -3,7 +3,8 @@
         xsi:schemaLocation="urn:infinispan:config:10.0 http://www.infinispan.org/schemas/infinispan-config-10.0.xsd
                             urn:infinispan:server:10.0 http://www.infinispan.org/schemas/infinispan-server-10.0.xsd"
         xmlns="urn:infinispan:config:10.0"
-        xmlns:server="urn:infinispan:server:10.0">
+        xmlns:server="urn:infinispan:server:10.0"
+        xmlns:gsp='http://groovy.codehaus.org/2005/gsp'>
 
     <jgroups>
         <stack-file name="image-${jgroups.transport}" path="jgroups-${jgroups.transport}.xml"/>
@@ -33,7 +34,18 @@
                                          plain-text="true"/>
                         <group-properties path="groups.properties" relative-to="infinispan.server.config.path"/>
                     </properties-realm>
-                    <!-- ##SERVER_IDENTITIES## -->
+
+                    <gsp:scriptlet>
+                        if ("${keystore.path}" != "null") {
+                    </gsp:scriptlet>
+                    <server-identities>
+                        <ssl>
+                            <keystore path="${keystore.path}" keystore-password="${keystore.password}"/>
+                        </ssl>
+                    </server-identities>
+                    <gsp:scriptlet>
+                        }
+                    </gsp:scriptlet>
                 </security-realm>
             </security-realms>
         </security>

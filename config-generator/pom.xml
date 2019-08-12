@@ -17,6 +17,7 @@
 
         <mainClass>Main</mainClass>
 
+        <version.elytron>1.6.4.Final</version.elytron>
         <version.groovy>2.5.7</version.groovy>
         <version.snakeyaml>1.23</version.snakeyaml>
         <version.substrate>19.1.1</version.substrate>
@@ -38,6 +39,12 @@
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-templates</artifactId>
             <version>${version.groovy}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-x500-cert</artifactId>
+            <version>${version.elytron}</version>
         </dependency>
 
         <dependency>
