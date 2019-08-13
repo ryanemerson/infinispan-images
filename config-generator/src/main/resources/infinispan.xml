@@ -23,7 +23,6 @@
 
         <socket-bindings default-interface="public" port-offset="0">
             <socket-binding name="default" port="11222"/>
-            <socket-binding name="memcached" port="11221"/>
         </socket-bindings>
 
         <security>
@@ -51,9 +50,14 @@
         </security>
 
         <endpoints socket-binding="default" security-realm="default">
-            <hotrod-connector name="hotrod"/>
-            <rest-connector name="rest"/>
-            <memcached-connector socket-binding="memcached" />
+            <hotrod-connector name="hotrod" >
+                <authentication security-realm="default">
+                    <sasl mechanisms="DIGEST-MD5"/>
+                </authentication>
+            </hotrod-connector>
+            <rest-connector name="rest">
+                <authentication mechanisms="DIGEST BASIC" security-realm="default"/>
+            </rest-connector>
         </endpoints>
     </server>
 </infinispan>

@@ -17,7 +17,6 @@
 
         <mainClass>Main</mainClass>
 
-        <version.elytron>1.6.4.Final</version.elytron>
         <version.groovy>2.5.7</version.groovy>
         <version.snakeyaml>1.23</version.snakeyaml>
         <version.substrate>19.1.1</version.substrate>
@@ -42,12 +41,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-x500-cert</artifactId>
-            <version>${version.elytron}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>${version.snakeyaml}</version>
@@ -62,10 +55,6 @@
                 <version>${version.maven.compiler.plugin}</version>
                 <configuration>
                     <compilerId>groovy-eclipse-compiler</compilerId>
-<!--                    <compilerArguments>-->
-<!--                        <indy/>-->
-<!--                        <configScript>config.groovy</configScript>-->
-<!--                    </compilerArguments>-->
                 </configuration>
                 <dependencies>
                     <dependency>
