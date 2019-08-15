@@ -53,14 +53,14 @@
 
         <endpoints socket-binding="default" security-realm="default">
             <hotrod-connector name="hotrod" >
-                <authentication security-realm="default">
-                    <sasl mechanisms="SCRAM-SHA-512 SCRAM-SHA-384 SCRAM-SHA-256 SCRAM-SHA-1 DIGEST-SHA-512 DIGEST-SHA-384 DIGEST-SHA-256 DIGEST-SHA DIGEST-MD5 CRAM-MD5 PLAIN" qop="${endpoints.hotrod.qop}" server-name="${endpoints.hotrod.serverName}">
-                        <property name="com.sun.security.sasl.digest.realm">default</property>
-                    </sasl>
-                </authentication>
+<!--                <authentication security-realm="default">-->
+<!--                    <sasl mechanisms="SCRAM-SHA-512 SCRAM-SHA-384 SCRAM-SHA-256 SCRAM-SHA-1 DIGEST-SHA-512 DIGEST-SHA-384 DIGEST-SHA-256 DIGEST-SHA DIGEST-MD5 CRAM-MD5 PLAIN" qop="${endpoints.hotrod.qop}" server-name="${endpoints.hotrod.serverName}">-->
+<!--                        <property name="com.sun.security.sasl.digest.realm">default</property>-->
+<!--                    </sasl>-->
+<!--                </authentication>-->
             </hotrod-connector>
             <rest-connector name="rest">
-                <authentication mechanisms="DIGEST" security-realm="default"/>
+<!--                <authentication mechanisms="DIGEST" security-realm="default"/>-->
             </rest-connector>
         </endpoints>
     </server>
