@@ -5,9 +5,8 @@ import org.yaml.snakeyaml.Yaml
 
 import java.security.MessageDigest
 
-Map.metaClass.addNested = { Map rhs ->
-    def lhs = delegate
-    rhs.each { k, v -> lhs[k] = lhs[k] in Map ? lhs[k].addNested(v) : lhs[k] ?: v }
+static Map mergeMaps(Map lhs, Map rhs) {
+    rhs.each { k, v -> lhs[k] = lhs[k] in Map ? mergeMaps(lhs[k], v) : v }
     lhs
 }
 
@@ -77,24 +76,14 @@ static void processIdentities(Map identities, String outputDir) {
 
 if (args.length != 3) printErrorAndExit 'Usage: CONFIG_YAML IDENTITIES_YAML OUTPUT_DIR'
 
+Map defaultConfig = new Yaml().load(ConfigGenerator.classLoader.getResourceAsStream('default-config.yaml'))
 Map configYaml = new Yaml().load(new File(args[0]).newInputStream())
 Map identitiesYaml = new Yaml().load(new File(args[1]).newInputStream())
 def outputDir = addSeparator args[2]
 
 // Add default values to Infinispan configuration map if not specified
-configYaml.addNested([
-        infinispan: [clusterName: 'infinispan'],
-        endpoints : [
-                hotrod: [
-                        qop       : 'auth',
-                        serverName: 'infinispan'
-                ]],
-        jgroups   : [
-                bindAddress: InetAddress.localHost.hostAddress,
-                transport  : 'udp'
-        ],
-        keystore  : [alias: 'server']
-])
+defaultConfig.jgroups.bindAddress = InetAddress.localHost.hostAddress
+configYaml = mergeMaps defaultConfig, configYaml
 
 // Create Keystore if required
 createKeystore configYaml.keystore, outputDir

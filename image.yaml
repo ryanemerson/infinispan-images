@@ -18,6 +18,7 @@ packages:
 
 ports:
   - value: 7800  # TCP bind_port
+  - value: 11221 # Infinispan Memcached
   - value: 11222 # Infinispan Single Port
   - value: 45700 # MPING
   - value: 57600 # FD_SOCK
