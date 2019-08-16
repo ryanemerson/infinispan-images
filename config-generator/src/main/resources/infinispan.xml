@@ -32,8 +32,7 @@
             <security-realms>
                 <security-realm name="default">
                     <properties-realm groups-attribute="Roles">
-                        <user-properties path="users.properties" relative-to="infinispan.server.config.path"
-                                         plain-text="true"/>
+                        <user-properties path="users.properties" relative-to="infinispan.server.config.path" plain-text="true"/>
                         <group-properties path="groups.properties" relative-to="infinispan.server.config.path"/>
                     </properties-realm>
 
@@ -57,17 +56,17 @@
         <endpoints socket-binding="default" security-realm="default">
             <gsp:scriptlet>if (endpoints.hotrod.enabled) {</gsp:scriptlet>
             <hotrod-connector name="hotrod" >
-<!--                <authentication security-realm="default">-->
-<!--                    <sasl mechanisms="SCRAM-SHA-512 SCRAM-SHA-384 SCRAM-SHA-256 SCRAM-SHA-1 DIGEST-SHA-512 DIGEST-SHA-384 DIGEST-SHA-256 DIGEST-SHA DIGEST-MD5 CRAM-MD5 PLAIN" qop="${endpoints.hotrod.qop}" server-name="${endpoints.hotrod.serverName}">-->
-<!--                        <property name="com.sun.security.sasl.digest.realm">default</property>-->
-<!--                    </sasl>-->
-<!--                </authentication>-->
+                <authentication security-realm="default">
+                    <sasl mechanisms="SCRAM-SHA-512 SCRAM-SHA-384 SCRAM-SHA-256 SCRAM-SHA-1 DIGEST-SHA-512 DIGEST-SHA-384 DIGEST-SHA-256 DIGEST-SHA DIGEST-MD5 CRAM-MD5 PLAIN" qop="${endpoints.hotrod.qop}" server-name="${endpoints.hotrod.serverName}">
+                        <property name="com.sun.security.sasl.digest.realm">default</property>
+                    </sasl>
+                </authentication>
             </hotrod-connector>
             <gsp:scriptlet>}</gsp:scriptlet>
 
             <gsp:scriptlet>if (endpoints.rest.enabled) {</gsp:scriptlet>
             <rest-connector name="rest">
-<!--                <authentication mechanisms="DIGEST" security-realm="default"/>-->
+                <authentication mechanisms="DIGEST" security-realm="default"/>
             </rest-connector>
             <gsp:scriptlet>}</gsp:scriptlet>
 
