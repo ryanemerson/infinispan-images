@@ -22,11 +22,9 @@
 
     <gsp:scriptlet>
         if (jgroups.dnsPing?.query) {
-            def recordType =  jgroups.dnsPing.recordType ?: 'A'
-            def address = jgroups.dnsPing.address ?: ''
     </gsp:scriptlet>
-    <dns.DNS_PING dns_address="${address}" dns_query="${jgroups.dnsPing.query}"
-                  dns_record_type="${recordType}"/>
+    <dns.DNS_PING dns_address="${jgroups.dnsPing.address}" dns_query="${jgroups.dnsPing.query}"
+                  dns_record_type="${jgroups.dnsPing.recordType}"/>
     <gsp:scriptlet>
         } else {
     </gsp:scriptlet>

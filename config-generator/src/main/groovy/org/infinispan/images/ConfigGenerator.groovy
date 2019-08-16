@@ -73,16 +73,20 @@ static void processIdentities(Map identities, String outputDir) {
     processCredentials identities.credentials, outputDir
 }
 
-if (args.length != 3) printErrorAndExit 'Usage: CONFIG_YAML IDENTITIES_YAML OUTPUT_DIR'
+if (args.length < 2) printErrorAndExit 'Usage: OUTPUT_DIR IDENTITIES_YAML <CONFIG_YAML>'
 
-Map defaultConfig = new Yaml().load(ConfigGenerator.classLoader.getResourceAsStream('default-config.yaml'))
-Map configYaml = new Yaml().load(new File(args[0]).newInputStream())
+def outputDir = addSeparator args[0]
 Map identitiesYaml = new Yaml().load(new File(args[1]).newInputStream())
-def outputDir = addSeparator args[2]
+Map defaultConfig = new Yaml().load(ConfigGenerator.classLoader.getResourceAsStream('default-config.yaml'))
 
-// Add default values to Infinispan configuration map if not specified
+// Process Identities
+processIdentities identitiesYaml, outputDir
+
+// Add bindAddress to defaults
 defaultConfig.jgroups.bindAddress = InetAddress.localHost.hostAddress
-configYaml = mergeMaps defaultConfig, configYaml
+
+// If no user config then use defaults, otherwise load user config and add default values for missing elements
+Map configYaml = args.length == 2 ? defaultConfig : mergeMaps(defaultConfig, new Yaml().load(new File(args[2]).newInputStream()))
 
 // Create Keystore if required
 createKeystore configYaml.keystore, outputDir
@@ -93,6 +97,3 @@ processTemplate "jgroups-${transport}.xml", "${outputDir}jgroups-${transport}.xm
 
 // Generate Infinispan configuration
 processTemplate 'infinispan.xml', "${outputDir}infinispan.xml", configYaml
-
-// Process Identities
-processIdentities identitiesYaml, outputDir

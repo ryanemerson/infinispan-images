@@ -11,5 +11,8 @@ endpoints:
     enabled: true
 jgroups:
   transport: udp
+  dnsPing:
+    address: ""
+    recordType: A
 keystore:
   alias: server

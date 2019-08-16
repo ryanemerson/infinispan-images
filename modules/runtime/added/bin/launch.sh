@@ -16,7 +16,7 @@ if [ ${SERVER_ROOT} != ${ISPN_HOME} ]; then
   ln -s ${SERVER_ROOT} ${ISPN_HOME}
 fi
 
-java -jar ${ISPN_HOME}/bin/config-generator.jar ${CONFIG_PATH} ${IDENTITIES_PATH} ${ISPN_HOME}/server/conf
+java -jar ${ISPN_HOME}/bin/config-generator.jar ${ISPN_HOME}/server/conf ${IDENTITIES_PATH} ${CONFIG_PATH}
 
 if [ -n "${DEBUG}" ]; then
   cat ${SERVER_ROOT}/server/conf/*.xml
