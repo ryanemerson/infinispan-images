@@ -8,6 +8,8 @@ artifacts:
     path: /tmp/artifacts
   - name: server.zip
     path: /tmp/artifacts
+  - name: runtime.zip
+    path: runtime.zip
 
 execute:
   - script: extract.sh

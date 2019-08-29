@@ -8,5 +8,6 @@ version: 1.0
 packages:
   install:
     - bsdtar
-    - java-11-openjdk
+    # - java-11-openjdk
     - openssl
+    - glibc

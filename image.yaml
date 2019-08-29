@@ -8,6 +8,8 @@ artifacts:
   url: https://repository.jboss.org/org/infinispan/images/config-generator/0.0.1.Final/config-generator-0.0.1.Final.jar
 - name: server.zip
   url: https://downloads.jboss.org/infinispan/10.0.0.CR1/infinispan-server-10.0.0.CR1.zip
+- name: runtime.zip
+  path: runtime.zip
 packages:
   manager: microdnf
 ports:
