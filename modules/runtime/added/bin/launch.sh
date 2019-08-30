@@ -66,10 +66,11 @@ YamlEnd
   echo "${identities}" > ${IDENTITIES_PATH}
 fi
 
-java -jar ${ISPN_HOME}/bin/config-generator.jar ${ISPN_HOME}/server/conf ${IDENTITIES_PATH} ${CONFIG_PATH}
+/opt/jre/bin/java -jar ${ISPN_HOME}/bin/config-generator.jar ${ISPN_HOME}/server/conf ${IDENTITIES_PATH} ${CONFIG_PATH}
 
 if [ -n "${DEBUG}" ]; then
   cat ${SERVER_ROOT}/server/conf/*.xml
 fi
 
+export JAVA=/opt/jre/bin/java
 exec ${ISPN_HOME}/bin/server.sh

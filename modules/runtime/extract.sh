@@ -4,6 +4,10 @@ set -e
 ADDED_DIR=$(dirname $0)/added
 SERVER_ROOT=/opt/infinispan
 
+mkdir -p /opt/jre
+cd /opt/jre
+bsdtar --strip-components=1 -xvf /tmp/artifacts/runtime.zip
+
 mkdir -p $SERVER_ROOT
 cd $SERVER_ROOT
 bsdtar --strip-components=1 -xvf /tmp/artifacts/server.zip
