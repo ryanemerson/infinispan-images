@@ -10,6 +10,7 @@ packages:
     - bsdtar
     - java-11-openjdk-headless
     - openssl
+    - sudo
 
 execute:
   - script: trim.sh

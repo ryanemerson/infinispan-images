@@ -2,14 +2,14 @@ schema_version: 1
 name: infinispan/server
 version: 10.1.0-SNAPSHOT-1
 description: Infinispan Server
-from: registry.access.redhat.com/ubi8/ubi-minimal:latest
+from: registry.access.redhat.com/ubi8/ubi:latest
 artifacts:
 - name: config-generator.jar
   url: https://repository.jboss.org/org/infinispan/images/config-generator/1.0.1.Final/config-generator-1.0.1.Final.jar
 - name: server.zip
   url: https://downloads.jboss.org/infinispan/10.0.1.Final/infinispan-server-10.0.1.Final.zip
 packages:
-  manager: microdnf
+  manager: dnf
 ports:
 - value: 7800
 - value: 11221
@@ -70,5 +70,5 @@ modules:
 run:
   cmd:
   - ./bin/launch.sh
-  user: 185
+  user: root
   workdir: /opt/infinispan
