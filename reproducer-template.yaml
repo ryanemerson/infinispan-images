@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: reproducer-template
+metadata:
+  labels:
+    template: reproducer-template
+  name: reproducer-template
+objects:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        application: infinispan
+      name: infinispan-ping
+    spec:
+      clusterIP: None
+      ports:
+      - name: ping
+        port: 7800
+        protocol: TCP
+        targetPort: 7800
+      selector:
+        deploymentConfig: infinispan
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        application: infinispan
+      name: infinispan
+    spec:
+      ports:
+      - name: single-port
+        port: 11222
+        targetPort: 11222
+      selector:
+        deploymentConfig: infinispan
+  - apiVersion: apps/v1beta1
+    kind: StatefulSet
+    metadata:
+      labels:
+        application: infinispan
+      name: infinispan
+    spec:
+      replicas: 2
+      serviceName: infinispan-ping
+      strategy:
+        type: Rolling
+        rollingParams:
+          updatePeriodSeconds: 20
+          intervalSeconds: 20
+          timeoutSeconds: 1200
+          maxUnavailable: 1
+          maxSurge: 1
+      template:
+        metadata:
+          labels:
+            application: infinispan
+            deploymentConfig: infinispan
+          name: infinispan
+        spec:
+          containers:
+          - command: [/opt/infinispan/bin/server.sh]
+            args:
+              - -b
+              - SITE_LOCAL
+              - -c
+              - /config/infinispan-inline-stack.xml
+              - -Djgroups.dns.query=infinispan-ping.reproducer.svc.cluster.local
+            env:
+            - name: USER
+              value: test
+            - name: PASS
+              value: test
+            image: quay.io/remerson/server:SNAPSHOT
+            name: reproducer
+            ports:
+            - containerPort: 7800
+              name: ping
+              protocol: TCP
+            - containerPort: 11222
+              name: hotrod
+              protocol: TCP
+            livenessProbe:
+              httpGet:
+                path: /rest/v2/cache-managers/clustered/health/status
+                port: 11222
+              failureThreshold: 5
+              initialDelaySeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 10
+            readinessProbe:
+              httpGet:
+                path: /rest/v2/cache-managers/clustered/health/status
+                port: 11222
+              failureThreshold: 5
+              initialDelaySeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 10
+            resources:
+              limits:
+                memory: 512Mi
+              requests:
+                cpu: "0.5"
+                memory: 512Mi
+            volumeMounts:
+            - mountPath: /config
+              name: config-volume
+          volumes:
+            - name: config-volume
+              configMap:
+                name: infinispan-configuration
