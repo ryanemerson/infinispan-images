@@ -11,6 +11,9 @@ packages:
     - java-11-openjdk-headless
     - openssl
     - sudo
+    - iputils
+    - net-tools
+    - nmap-ncat
 
 execute:
   - script: trim.sh
