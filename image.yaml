@@ -16,6 +16,7 @@ ports:
 - value: 11222
 - value: 45700
 - value: 57600
+- value: 10000
 labels:
 - name: name
   value: Infinispan Server
