@@ -7,7 +7,7 @@
     url: https://github.com/infinispan/infinispan-image-artifacts/archive/2.0.0.Dev01.tar.gz
     target: config-generator-src.tar.gz
   - name: server-src
-    url: https://github.com/infinispan/infinispan-quarkus/archive/11.0.0.Dev05.tar.gz
+    url: https://github.com/infinispan/infinispan-quarkus/archive/11.0.0.Dev05-01.tar.gz
     target: server-src.tar.gz
   modules:
     repositories:
@@ -40,9 +40,9 @@
   - name: name
     value: Infinispan Server
   - name: version
-    value: 11.0.0.Dev05
+    value: 11.0.0.Dev05-01
   - name: release
-    value: 11.0.0.Dev05
+    value: 11.0.0.Dev05-01
   - name: io.k8s.description
     value: Provides a scalable in-memory distributed database designed for fast access to large volumes of data.
   - name: io.k8s.display-name
