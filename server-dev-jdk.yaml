@@ -1,7 +1,8 @@
 - name: infinispan/server
   version: SNAPSHOT
   description: Infinispan Server
-  from: registry.access.redhat.com/ubi8/ubi-minimal:8.2-267
+  # from: registry.access.redhat.com/ubi8/ubi-minimal:8.2-267
+  from: registry.redhat.io/ubi8/ubi:8.2-299
   artifacts:
   - name: config-generator
     path: /some/path # TODO replace with path to artifact
@@ -9,7 +10,7 @@
     url: https://downloads.jboss.org/infinispan/11.0.0.CR1/infinispan-server-11.0.0.CR1.zip
     #path: # TODO uncomment and add path if local server desired
   packages:
-    manager: microdnf
+    manager: dnf
   ports:
   - value: 2157
   - value: 7800
@@ -71,11 +72,11 @@
       version: openjdk
     - name: org.infinispan.dependencies
       version: infinispan
-    - name: org.infinispan.distribution
-      version: jvm
-    - name: org.infinispan.runtime
+    # - name: org.infinispan.distribution
+    #   version: jvm
+    # - name: org.infinispan.runtime
   run:
     cmd:
-    - ./bin/launch.sh
-    user: 185
-    workdir: /opt/infinispan
+    - /bin/bash
+    # user: 185
+    workdir: /
