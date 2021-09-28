@@ -50,19 +50,19 @@ credentials when attempting to access the exposed endpoints via clients.
 It's also possible to provide a admin username/password combination via environment variables like so:
 
 ```bash
-docker run -p 11222:11222 -e USER="Titus Bramble" -e PASS="Shambles" infinispan/server
+docker run -p 11222:11222 -e USER="admin" -e PASS="changeme" infinispan/server
 ```
 
 > We recommend utilising the auto-generated credentials or USER & PASS env variables for initial development only. Providing
-authentication and authorization configuration via a [Identities yaml file](#yaml-configuration) allows for much greater
+authentication and authorization configuration via a [Identities Batch file](#identities-batch) allows for much greater
 control.
 
 #### HotRod Clients
 When connecting a HotRod client to the image, the following SASL properties must be configured on your client (with the username and password properties changed as required):
 
 ```java
-infinispan.client.hotrod.auth_username=Titus Bramble
-infinispan.client.hotrod.auth_password=Shambles
+infinispan.client.hotrod.auth_username=admin
+infinispan.client.hotrod.auth_password=changme
 infinispan.client.hotrod.auth_realm=default
 infinispan.client.hotrod.auth_server_name=infinispan
 infinispan.client.hotrod.sasl_mechanism=DIGEST-MD5
@@ -79,95 +79,17 @@ the Infinispan image with a identities and configuration file located in the cur
 ```bash
 docker run -v $(pwd):/user-config -e IDENTITIES_PATH="/user-config/identities.yaml" -e CONFIG_PATH="/user-config/config.yaml" infinispan/server
 ```
-#### Identities Yaml
-Below is an example Identities yaml, that provides a list of user credentials. All of the users specified in this
+#### Identities Batch
+Below is an example Identities batch CLI file, that defines user credentials and roles before server startup. All of the users specified in this
 file are loaded by the server and there credentials can then be used to access the configured endpoints, e.g. HotRod.
 
 ```yaml
-credentials:
-  - username: Alan Shearer
-    password: striker9
-    roles:
-      - admin
-  - username: Nolberto Solano
-    password: winger7
-    roles:
-      - dev
+user create "Alan Shearer" -p "striker9" -g admin
+user create "Nolberto Solano" -p "winger7" -g dev
 ```
-
-##### Admin Identities Yaml
-If `endpoints.dedicatedAdmin: true` it's also possible to provide a identities yaml for the admin security realm by
-setting the `ADMIN_IDENTITIES_PATH` env var. The format of this file is the same as the identities yaml.
-
-#### Config Yaml
-Below is an example configuration file which shows the current default values used by the image if not provided by the
-user configuration yaml.
-```yaml
-infinispan:
-  authorization:
-    enabled: true
-  clusterName: infinispan
-  zeroCapacityNode: false
-  locks:
-    owners: -1
-    reliability: consistent
-endpoints:
-  dedicatedAdmin: false
-  auth: true
-  clientCert: none # none | validate | authenticate
-  hotrod:
-    enabled: true
-    qop: auth
-    serverName: infinispan
-  memcached:
-    enabled: false
-  rest:
-    enabled: true
-jgroups:
-  diagnostics: false
-  encrypt: false
-  transport: tcp
-  dnsPing:
-    address: ""
-    recordType: A
-keystore:
-  alias: server
-  selfSignCert: false
-  type: pkcs12
-xsite:
-  masterCandidate: true
-  maxSiteMasters: 1
-  transport: tcp
-
-logging:
-  console:
-    level: trace
-    pattern: '%d{HH:mm:ss,SSS} %-5p (%t) [%c] %m%throwable%n'
-  file:
-    level: trace
-    path: '${sys:infinispan.server.log.path}/server.log'
-    pattern: '%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p (%t) [%c] %m%throwable%n'
-  categories:
-    com.arjuna: warn
-    org.infinispan: info
-    org.jgroups: warn
-```
-However, it is not necessary to provide all of these fields when configuring your image. Instead you can just provide
-the relevant parts. For example, to utilise udp for transport and enable the memcached endpoint, your config woudl be
-as follows:
-
-```yaml
-endpoints:
-  memcached:
-    enabled: true
-jgroups:
-  transport: udp
-```
-
-#### Clustering
-The default JGroups stack for the image is currently tcp.
-
 ##### Kubernetes/Openshift Clustering
+TODO replace with configuration example. See Helm Chart for guidance
+
 When running in a managed environment such as Kubernetes, it is not possible to utilise multicasting for initial node
 discovery, thefore we must utilise the JGroups [DNS_PING](http://jgroups.org/manual4/index.html#_dns_ping) protocol to
 discover cluster members. To enable this, we must provide the `jgroups.dnsPing.query` element in the configuration yaml.
@@ -180,189 +102,6 @@ jgroups:
   transport: tcp
   dnsPing:
     query: infinispan-dns-ping.myproject.svc.cluster.local
-```
-
-##### Encryption
-The JGroups encryption protocols ASYM_ENCRYPT and SERIALIZE can be enabled by defining the following in the yaml:
-
-```yaml
-jgroups:
-  encrypt: true
-```
-
-Unfortunately the ASYM_ENCRYPT protocol is vulnerable to man-in-the-middle attacks when configured by itself (see the [JGroups docs for more details](http://jgroups.org/manual4/index.html#SSL_KEY_EXCHANGE)), therefore
-we automatically add the SSL_KEY_EXCHANGE protocol to the stack if a [keystore](#keystore) is configured. For example,
-the following yaml will ensure that both ASYM_ENCRYPT and SSL_KEY_EXCHANGE protocols are utilised:
-
-```yaml
-jgroups:
-  encrypt: true
-keystore:
-  caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
-  crtPath: /var/run/secrets/openshift.io/serviceaccount
-```
-
-> Note, in order for SSL_KEY_EXCHANGE to be able to create the required SSL sockets, it's necessary for both a `caFile` and `caPath` to be configured.
-
-#### Endpoints
-The Infinispan image exposes both the REST and HotRod endpoints via a single port `11222`.
-
-The memcached port is also available via port `11221`, however it currently does not support authentication and therefore
-it must be enabled in the config yaml as show below:
-```yaml
----
-endpoints:
-  memcached:
-    enabled: true
-```
-Similarly, it's also possible to disable the HotRod and/or REST endpoints by setting `enabled: false` on the respective
-endpoint's configuration element.
-
-##### Encryption
-Encryption is automatically enabled for all endpoints if a [keystore](#keystore) is configured, otherwise it is disabled.
-
-#### Admin Endpoint
-In addition to the user endpoint, it's also possible to expose a REST endpoint on port `11223` for admin operations. This
-is useful for environments where the admin and application users are distinct, for example the [infinispan operator](https://github.com/infinispan/infinispan-operator).
-
-To enable the admin endpoint provide admin identities file via the `ADMIN_IDENTITIES_PATH` and add the following to the config yaml:
-
-```yaml
-endpoints:
-  dedicatedAdmin: true
-```
-
-> By default this endpoint is disabled.
-
-#### Keystore
-In order for the image's endpoint and/or clustering to utilise encryption, it is necessary for a keystore to be defined.
-A keystore can be defined in one of two ways.
-
-###### Providing a CRT Path
-It's possible to provide a `crtPath` to a directory accessible to the image, that contains a private key and certificate in the
-files `tls.key` and `tls.crt` respectively. This results in a pkcs12 keystore being created and loaded by the server to
-enable endpoint encryption. Furthermore, it's also possible to provide a path to a certificate authority pem bundle via
-the `caFile` key.
-
-```yaml
----
-keystore:
-  caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt # Only required for JGroups encryption
-  crtPath: /var/run/secrets/openshift.io/serviceaccount
-  password: customPassword # Optional field, which determines the keystore's password, otherwise a default is used.
-```
-
-> This is ideal for managed environments such as Openshift/Kubernetes, as we can simply pass the certificates of the
-services CA, i.e. `caFile: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt`.
-
-###### Providing an existing keystore
-Alternatively, existing keystores can be utilised by providing the absolute path of the keystore.
-
-```yaml
-  path: /user-config/keystore.jks
-  password: customPassword # Required in order to be able to access the keystore
-  type: jks # If no type specifed, defaults to pkcs12
-```
-
-#### Logging
-To configure logging you can add the following to your config yaml:
-
-```yaml
-logging:
-  categories:
-    org.infinispan.factories: trace
-    org.infinispan.commons.marshall: warn
-```
-
-By default, all specified log levels will be output to both the console and log file (/opt/infinispan/server/log/server.log).
-If you require different log levels for the console and log file, this is possible by explicitly setting the required
-levels like so:
-
-```yaml
-logging:
-  console:
-    level: info
-  file:
-    level: trace
-  categories:
-    org.infinispan.factories: trace
-```
-
-It's also possible to specify the formatting of a log by providing a `pattern` string for the console and/or
-log file element:
-
-```yaml
-logging:
-  file:
-    pattern: '%K{level}%d{HH\:mm\:ss,SSS} %-5p [%c] (%t) %s%e%n'
-```
-
-Finally, if you require your log file to be located at a specific location, such as a mounted volume, it's possible to
-specify the path of the directory in which it will be stored via:
-
-```yaml
-logging:
-  file:
-    path: some/example/path
-```
-
-##### Rest Enabling CORS
-It's possible to configure the CORS rules for the REST endpoint as follows:
-
-```yaml
-endpoints:
-  rest:
-    cors:
-      - name: restrict-host1
-        allowedOrigins:
-          - http://host1
-          - https://host1
-        allowedMethods:
-          - GET
-
-      - name: allow-all
-        allowCredentials: true
-        allowedOrigins:
-          - '*'
-        allowedMethods:
-          - GET
-          - OPTIONS
-          - POST
-          - PUT
-          - DELETE
-        allowedHeaders:
-          - X-Custom-Header
-          - Upgrade-Insecure-Requests
-        exposeHeaders:
-          - Key-Content-Type
-        maxAgeSeconds: 1
-```
-
-The `name`, `allowedOrigins` and `allowedMethods` keys are mandatory.
-
-The rules are evaluated sequentially based on the "Origin" header set by the browser; in the example above if the origin
-is either "http://host1" or "https://host1" the rule "restrict host1" will apply, otherwise the next rule will be tested.
-Since the rule "allow ALL" permits all origins, any script coming from a different origin will be able to perform the
-methods specified and use the headers supplied. Detailed information about the different configuration parameters can
-be found in the [Infinispan REST guide](https://infinispan.org/docs/stable/titles/rest/rest.html#rest_server_cors).
-
-> It's also possible to configure basic CORS rules via providing the following java args when running the container `-e JAVA_OPTIONS="-Dinfinispan.server.rest.cors-allow=https://host.domain:port"`.
-
-#### XSite Replication
-In order to configure the image for xsite replication, it's necessary to provide the external address and port of the
-local site as well as the external address and port of all remote sites as part of the `config.yaml` at startup.
-Below shows the expected format:
-
-```yaml
----
-xsite:
-  address: # Externally accessible IP Address of local site
-  name: LON
-  port: 7200
-  backups:
-    - address: # Externally accessible  IP address of NYC site
-      name: NYC
-      port: 7200
 ```
 
 ### Java Properties
@@ -450,9 +189,9 @@ All of our images are created using the [Cekit](https://cekit.io) tool. Installa
 We leverage [cekit descriptor files](https://docs.cekit.io/en/latest/descriptor/image.html) in order to create the different
 image types.
 
-- `server-openjdk.yaml` - Creates the `infinispan/server` image with a natively compiled config-generator
-- `server-native.yaml` - Creates the `infinispan/server-native` image with a natively compiled config-generator and server
-- `cli.yaml` - Creates the `infinispan/cli` image with a natively compiled cli
+- `server-openjdk.yaml` - Creates the `infinispan/server` image.
+- `server-native.yaml` - Creates the `infinispan/server-native` image.
+- `cli.yaml` - Creates the `infinispan/cli` image with a natively compiled cli.
 - `server-dev-jdk.yaml` - Creates the `infinispan/server` image using local artifact paths that must be added to the descriptor.
 - `server-dev-native.yaml` - Creates the `infinispan/server-native` image using local artifact paths that must be added to the descriptor.
 - `cli-dev.yaml` - Creates the `infinispan/cli` image using a local cli executable that must be added to the descriptor.

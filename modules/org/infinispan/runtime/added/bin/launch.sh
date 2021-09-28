@@ -45,16 +45,8 @@ generate_identities_yaml() {
     fi
     printBorder
 
-identities=$(cat <<-YamlEnd
-credentials:
-  - username: ${USER}
-    password: ${PASS}
-    roles:
-      - admin
-YamlEnd
-)
-    export IDENTITIES_PATH=${ISPN_HOME}/server/conf/generated-identities.yaml
-    echo "${identities}" > ${IDENTITIES_PATH}
+    export IDENTITIES_PATH=${ISPN_HOME}/server/conf/generated-identities.batch
+    echo "user create ${USER} -p ${PASS} -g admin" > ${IDENTITIES_PATH}
   fi
 }
 
@@ -79,21 +71,21 @@ umask 0002
 generate_content
 
 [[ -n ${ADMIN_IDENTITIES_PATH} ]] && ADMIN_IDENTITES_OPT="--admin-identities=${ADMIN_IDENTITIES_PATH}"
-[[ -n ${IDENTITIES_PATH} ]] && IDENTITES_OPT="--identities=${IDENTITIES_PATH}"
-[[ -n ${CONFIG_PATH} ]] && CONFIG_OPT="--config=${CONFIG_PATH}"
+if [[ -n ${IDENTITIES_PATH} ]]; then
+  echo "'IDENTITIES_PATH' env var is no longer supported. Provide a batch script via 'IDENTITIES_BATCH' instead."
+  exit
+fi
 
-CONFIG_GENERATOR="${ISPN_HOME}/bin/config-generator"
-CONFIG_GENERATOR_ARGS="${ADMIN_IDENTITES_OPT} ${IDENTITES_OPT} ${CONFIG_OPT} ${ISPN_HOME}/server/conf"
-
-# If *.jar, java otherwise native
-if [[ -f "${CONFIG_GENERATOR}.jar" ]]; then
-  java -jar ${ISPN_HOME}/bin/config-generator.jar $CONFIG_GENERATOR_ARGS
-else
-  bin/config-generator $CONFIG_GENERATOR_ARGS
+if [[ -n ${CONFIG_PATH} ]]; then
+  echo "'CONFIG_PATH' env var is no longer supported. Infinispan configurations should be provided directly to the image as arguments."
+  exit
 fi
 
 if [ -n "${DEBUG}" ]; then
-  cat ${ISPN_HOME}/server/conf/*.xml
+  cat ${ISPN_HOME}/server/conf/*
 fi
 
+${ISPN_HOME/bin/cli.sh --file ${IDENTITIES_BATCH}
+
+# TODO how to pass Docker args here?
 exec ${ISPN_HOME}/bin/server.sh
