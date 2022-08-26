@@ -8,7 +8,6 @@ mkdir -p $SERVER_ROOT
 cd $SERVER_ROOT
 bsdtar --strip-components=1 -xvf /tmp/artifacts/server
 
-cp -r $ADDED_DIR/bin/* $SERVER_ROOT/bin
 rm $SERVER_ROOT/server/conf/infinispan-local.xml
 
 # Remove Rocksdb platform dependent files if they exist
