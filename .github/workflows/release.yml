@@ -1,0 +1,74 @@
+name: Release Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        type: string
+        default: ${{ github.ref }}
+      repository:
+        type: string
+        default: ${{ github.repository }}
+      descriptor:
+        description: 'The image descriptor to build'
+        required: true
+        type: string
+      imageRepository:
+        description: 'The image repository'
+        required: true
+        type: string
+      imageTag:
+        description: 'The image tag'
+        default: latest
+        type: string
+    outputs:
+      artifact:
+        description: The name of the uploaded image artifact
+        value: ${{ jobs.build.outputs.artifact }}
+
+# TODO build images in parallel
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    outputs:
+      artifact: ${{ steps.meta.outputs.artifact }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
+          repository: ${{ inputs.repository }}
+
+      - name: Install CEKit
+        uses: cekit/actions-setup-cekit@v1.1.5
+
+      - name: Create dockerfile
+        run: "cekit -v --descriptor ${{ inputs.descriptor }}.yaml build --overrides '{'version': '${{ inputs.imageTag }}'}' --dry-run docker"
+
+      - name: Debug
+        run: |
+          ls -l target
+          tree target
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          file: target/image/Dockerfile
+          tags: ${{ inputs.imageRepository }}:${{ inputs.imageTag }}
+          outputs: type=docker,dest=/tmp/image.tar
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.descriptor }}
+          path: /tmp/${{ inputs.descriptor }}.tar
+
+      - id: meta
+        run: |
+          echo "artifact=${{ inputs.descriptor }}" >> $GITHUB_OUTPUT
