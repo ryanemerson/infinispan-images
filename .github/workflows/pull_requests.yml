@@ -22,8 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # descriptor: [server-openjdk, server-native, cli]
-        descriptor: [server-openjdk]
+        descriptor: [server-openjdk, server-native, cli]
         os: [ubuntu-latest, macos-14]
 
     env:
@@ -69,11 +68,14 @@ jobs:
     needs: images
     runs-on: ubuntu-latest
 
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
+    strategy:
+      fail-fast: false
+      matrix:
+        descriptor: [server-openjdk, server-native, cli]
+        os: [ubuntu-latest, macos-14]
+
+    env:
+      IMAGE: ${{ matrix.descriptor == 'server-openjdk' && 'server' || matrix.descriptor }}
 
     steps:
       - name: Set up Docker Buildx
@@ -95,18 +97,18 @@ jobs:
 
       - name: Load images
         run: |
-          docker load --input server-openjdk-arm64.tar
-          docker load --input server-openjdk-amd64.tar
-          docker push quay.io/infinispan-test/server:amd64-latest
-          docker push quay.io/infinispan-test/server:arm64-latest
+          docker load --input ${IMAGE}-arm64.tar
+          docker load --input ${IMAGE}-amd64.tar
+          docker push quay.io/infinispan-test/${IMAGE}:amd64-latest
+          docker push quay.io/infinispan-test/${IMAGE}:arm64-latest
 
       - name: Create manifest
         run: |
-          docker manifest create --insecure quay.io/infinispan-test/server:multi \
-            quay.io/infinispan-test/server:amd64-latest \
-            quay.io/infinispan-test/server:arm64-latest
+          docker manifest create --insecure quay.io/infinispan-test/${IMAGE}:${{ matrix.descriptor }} \
+            quay.io/infinispan-test/${IMAGE}:amd64-latest \
+            quay.io/infinispan-test/${IMAGE}:arm64-latest
           
-          docker manifest inspect --verbose quay.io/infinispan-test/server:multi
+          docker manifest inspect --verbose quay.io/infinispan-test/${IMAGE}:${{ matrix.descriptor }}
 
       - name: Push
-        run: docker manifest push quay.io/infinispan-test/server:multi
+        run: docker manifest push quay.io/infinispan-test/${IMAGE}:${{ matrix.descriptor }}
