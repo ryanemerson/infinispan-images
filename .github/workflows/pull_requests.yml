@@ -56,7 +56,7 @@ jobs:
         context: ./target/image
         platforms: linux/${{ env.ARCH }}
         file: target/image/Dockerfile
-        tags: localhost:5000/infinispan/${{ env.IMAGE }}:${{ env.TAG }}
+        tags: quay.io/infinispan-test/${{ env.IMAGE }}:${{ env.TAG }}
         outputs: type=docker,dest=${{ env.TAR }}
 
     - name: Upload
@@ -86,24 +86,27 @@ jobs:
           pattern: "*"
           merge-multiple: true
 
-      # TODO remove
-      - run: ls -R
+      - name: Login to Quay
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_TOKEN }}
 
       - name: Load images
         run: |
           docker load --input server-openjdk-arm64.tar
           docker load --input server-openjdk-amd64.tar
-          docker push localhost:5000/infinispan/server:amd64-latest
-          docker push localhost:5000/infinispan/server:arm64-latest
+          docker push quay.io/infinispan-test/server:amd64-latest
+          docker push quay.io/infinispan-test/server:arm64-latest
 
       - name: Create manifest
         run: |
-          docker manifest create --insecure localhost:5000/infinispan/server:latest \
-            localhost:5000/infinispan/server:amd64-latest \
-            localhost:5000/infinispan/server:arm64-latest
+          docker manifest create --insecure quay.io/infinispan-test/server:multi \
+            quay.io/infinispan-test/server:amd64-latest \
+            quay.io/infinispan-test/server:arm64-latest
           
-          docker manifest inspect --verbose localhost:5000/infinispan/server:latest
-
+          docker manifest inspect --verbose quay.io/infinispan-test/server:multi
 
       - name: Push
-        run: docker manifest push localhost:5000/infinispan/server:latest
+        run: docker manifest push quay.io/infinispan-test/server:multi
