@@ -14,24 +14,21 @@ concurrency:
   group: ${{ github.head_ref || github.ref_name }} 
   cancel-in-progress: true
 
+
 jobs:
-  build:
+  images:
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        descriptor: [server-openjdk, server-native, cli]
+        # descriptor: [server-openjdk, server-native, cli]
+        descriptor: [server-openjdk]
+        os: [ubuntu-latest, macos-14]
 
     env:
       IMAGE: ${{ matrix.descriptor == 'server-openjdk' && 'server' || matrix.descriptor }}
-      TAG: ${{ github.event_name == 'pull_request' && format('PR-{0}', github.event.number) || 'latest' }}
-
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
+      ARCH: ${{ matrix.os == 'ubuntu-latest' && 'amd64' || 'arm64' }}
 
     steps:
     - uses: actions/checkout@v4
@@ -39,12 +36,14 @@ jobs:
     - name: Install CEKit
       uses: cekit/actions-setup-cekit@v1.1.5
 
+    - name: Define Env
+      run: |
+        echo "TAG=${{ env.ARCH }}-latest" >> $GITHUB_ENV
+        echo "TAR=/tmp/${{ matrix.descriptor }}-${{ env.ARCH }}.tar" >> $GITHUB_ENV
+
     - name: Create dockerfile
       run: |
         cekit -v --descriptor ${{ matrix.descriptor }}.yaml build --overrides "{\"version\": \"$TAG\"}" --dry-run docker
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -55,7 +54,56 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         context: ./target/image
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/${{ env.ARCH }}
         file: target/image/Dockerfile
         tags: localhost:5000/infinispan/${{ env.IMAGE }}:${{ env.TAG }}
-        push: true
+        outputs: type=docker,dest=${{ env.TAR }}
+
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.descriptor }}-${{ env.ARCH }}
+        path: ${{ env.TAR }}
+
+  manifests:
+    needs: images
+    runs-on: ubuntu-latest
+
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Download Component Images
+        uses: actions/download-artifact@v4
+        with:
+          path: .
+          pattern: "*"
+          merge-multiple: true
+
+      # TODO remove
+      - run: ls -R
+
+      - name: Load images
+        run: |
+          docker load --input server-openjdk-arm64.tar
+          docker load --input server-openjdk-amd64.tar
+          docker push localhost:5000/infinispan/server:amd64-latest
+          docker push localhost:5000/infinispan/server:arm64-latest
+
+      - name: Create manifest
+        run: |
+          docker manifest create --insecure localhost:5000/infinispan/server:latest \
+            localhost:5000/infinispan/server:amd64-latest \
+            localhost:5000/infinispan/server:arm64-latest
+          
+          docker manifest inspect --verbose localhost:5000/infinispan/server:latest
+
+
+      - name: Push
+        run: docker manifest push localhost:5000/infinispan/server:latest
