@@ -55,7 +55,7 @@ jobs:
         context: ./target/image
         platforms: linux/${{ env.ARCH }}
         file: target/image/Dockerfile
-        tags: quay.io/infinispan-test/${{ env.IMAGE }}:${{ env.TAG }}
+        tags: infinispan/${{ env.IMAGE }}:${{ env.TAG }}
         outputs: type=docker,dest=${{ env.TAR }}
 
     - name: Upload
@@ -67,6 +67,12 @@ jobs:
   manifests:
     needs: images
     runs-on: ubuntu-latest
+
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
 
     strategy:
       fail-fast: false
@@ -88,27 +94,32 @@ jobs:
           pattern: "*"
           merge-multiple: true
 
+      - name: Load images
+        run: |
+          ARCHS=("arm64 amd64")
+          for ARCH in ${ARCHS[@]}; do
+            IMG=infinispan/${IMAGE}:${ARCH}-latest
+            docker load --input ${IMAGE}-arm64.tar
+            docker tag ${IMG} localhost:5000/${IMG}
+            docker push localhost:5000/${IMG}
+          done
+
+      - name: Create manifest
+        run: |
+          IMG=localhost:5000/infinispan/${IMAGE}:${{ matrix.descriptor }}
+          docker manifest create --insecure ${IMG} \
+            localhost:5000/infinispan/${IMAGE}:amd64-latest \
+            localhost:5000/infinispan/${IMAGE}:arm64-latest
+          
+          docker manifest inspect --verbose ${IMG}
+          docker tag ${IMG} quay.io/infinispan-test/${IMAGE}:${{ matrix.descriptor }}
+
       - name: Login to Quay
         uses: docker/login-action@v2
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_TOKEN }}
-
-      - name: Load images
-        run: |
-          docker load --input ${IMAGE}-arm64.tar
-          docker load --input ${IMAGE}-amd64.tar
-          docker push quay.io/infinispan-test/${IMAGE}:amd64-latest
-          docker push quay.io/infinispan-test/${IMAGE}:arm64-latest
-
-      - name: Create manifest
-        run: |
-          docker manifest create --insecure quay.io/infinispan-test/${IMAGE}:${{ matrix.descriptor }} \
-            quay.io/infinispan-test/${IMAGE}:amd64-latest \
-            quay.io/infinispan-test/${IMAGE}:arm64-latest
-          
-          docker manifest inspect --verbose quay.io/infinispan-test/${IMAGE}:${{ matrix.descriptor }}
 
       - name: Push
         run: docker manifest push quay.io/infinispan-test/${IMAGE}:${{ matrix.descriptor }}
